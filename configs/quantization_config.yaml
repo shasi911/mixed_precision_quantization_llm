@@ -1,0 +1,119 @@
+model:
+  name: "meta-llama/Llama-2-7b-hf"
+  cache_dir: "./model_cache"
+  dtype: "float16"          # base dtype for non-quantized layers
+
+quantization:
+  bits: 4                   # precision when quantize: true  (4 or 8)
+  quant_type: "nf4"         # 4-bit type: "nf4" or "fp4"
+  compute_dtype: "float16"  # compute dtype during forward pass
+  double_quant: false       # nested quantization (saves ~0.4 bits extra)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-component quantization toggles
+#   quantize: false → keep at full precision (float16)
+#   quantize: true  → apply INT{bits} quantization to all Linear layers inside
+#
+# Decoder layer fine-grained override (optional, comment in to use):
+#   self_attn:
+#     q_proj: false / true
+#     k_proj: false / true
+#     v_proj: false / true
+#     o_proj: false / true
+#   mlp:
+#     gate_proj: false / true
+#     up_proj:   false / true
+#     down_proj: false / true
+#
+# When sublayer keys are absent, the parent "quantize" flag applies to all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+layers:
+  embed_tokens:
+    quantize: false
+
+  norm:
+    quantize: false
+
+  lm_head:
+    quantize: false
+
+  decoder_layers:
+    "0":
+      quantize: false
+    "1":
+      quantize: false
+    "2":
+      quantize: false
+    "3":
+      quantize: false
+    "4":
+      quantize: false
+    "5":
+      quantize: false
+    "6":
+      quantize: false
+    "7":
+      quantize: false
+    "8":
+      quantize: false
+    "9":
+      quantize: false
+    "10":
+      quantize: false
+    "11":
+      quantize: false
+    "12":
+      quantize: false
+    "13":
+      quantize: false
+    "14":
+      quantize: false
+    "15":
+      quantize: false
+    "16":
+      quantize: false
+    "17":
+      quantize: false
+    "18":
+      quantize: false
+    "19":
+      quantize: false
+    "20":
+      quantize: false
+    "21":
+      quantize: false
+    "22":
+      quantize: false
+    "23":
+      quantize: false
+    "24":
+      quantize: false
+    "25":
+      quantize: false
+    "26":
+      quantize: false
+    "27":
+      quantize: false
+    "28":
+      quantize: false
+    "29":
+      quantize: false
+    "30":
+      quantize: false
+    "31":
+      quantize: false
+
+evaluation:
+  datasets:
+    - gsm8k
+    - boolq
+    - piqa
+  max_samples: 200          # samples per dataset (set null for full dataset)
+  batch_size: 1
+  max_new_tokens: 256
+  few_shot: 4               # few-shot examples for GSM8K
+
+output:
+  results_dir: "./results"
+  log_level: "INFO"
