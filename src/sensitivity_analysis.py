@@ -15,7 +15,7 @@ and should be kept at high precision in the mixed-precision strategy.
 Usage (standalone)
 ------------------
 python -m src.sensitivity_analysis \
-    --model meta-llama/Llama-2-7b-hf \
+    --model NousResearch/Llama-2-7b-hf \
     --bits 4 \
     --dataset boolq \
     --max_samples 100 \
@@ -227,7 +227,7 @@ def run_sensitivity_analysis(
 
 def _parse_args():
     p = argparse.ArgumentParser(description="Layer sensitivity analysis")
-    p.add_argument("--model", default="meta-llama/Llama-2-7b-hf")
+    p.add_argument("--model", default="NousResearch/Llama-2-7b-hf")
     p.add_argument("--cache_dir", default="./model_cache")
     p.add_argument("--bits", type=int, choices=[4, 8], default=4)
     p.add_argument("--quant_type", default="nf4", choices=["nf4", "fp4"])

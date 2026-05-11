@@ -1,5 +1,5 @@
 model:
-  name: "meta-llama/Llama-2-7b-hf"
+  name: "NousResearch/Llama-2-7b-hf"
   cache_dir: "./model_cache"
   dtype: "float16"          # base dtype for non-quantized layers
 
