@@ -110,6 +110,7 @@ evaluation:
     - boolq
     - piqa
   max_samples: 200          # samples per dataset (set null for full dataset)
+  dataset_cache_dir: "./dataset_cache"
   batch_size: 1
   max_new_tokens: 256
   few_shot: 4               # few-shot examples for GSM8K

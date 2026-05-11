@@ -3,6 +3,7 @@ Evaluation pipeline for GSM8K, BoolQ, and PIQA.
 """
 
 import logging
+import os
 import time
 import re
 import torch
@@ -20,6 +21,14 @@ from .utils import (
 )
 
 logger = logging.getLogger("quant_llm.evaluate")
+
+
+def _load_dataset(path: str, *args, split: str, cache_dir: str | None = None):
+    """Load a Hugging Face dataset using the configured reusable cache."""
+    dataset_cache_dir = cache_dir or os.getenv("HF_DATASETS_CACHE")
+    if dataset_cache_dir:
+        logger.info("Loading dataset %s from cache_dir=%s", path, dataset_cache_dir)
+    return load_dataset(path, *args, split=split, cache_dir=dataset_cache_dir)
 
 # ─── GSM8K few-shot examples (standard 4-shot) ────────────────────────────────
 GSM8K_FEW_SHOT = [
@@ -82,10 +91,11 @@ def evaluate_gsm8k(
     max_samples: int | None = 200,
     max_new_tokens: int = 256,
     few_shot: int = 4,
+    dataset_cache_dir: str | None = None,
 ) -> dict:
     logger.info("Evaluating on GSM8K (max_samples=%s) …", max_samples)
     device = next(model.parameters()).device
-    dataset = load_dataset("gsm8k", "main", split="test")
+    dataset = _load_dataset("gsm8k", "main", split="test", cache_dir=dataset_cache_dir)
     if max_samples:
         dataset = dataset.select(range(min(max_samples, len(dataset))))
 
@@ -124,10 +134,11 @@ def evaluate_boolq(
     tokenizer,
     max_samples: int | None = 200,
     max_new_tokens: int = 16,
+    dataset_cache_dir: str | None = None,
 ) -> dict:
     logger.info("Evaluating on BoolQ (max_samples=%s) …", max_samples)
     device = next(model.parameters()).device
-    dataset = load_dataset("boolq", split="validation")
+    dataset = _load_dataset("boolq", split="validation", cache_dir=dataset_cache_dir)
     if max_samples:
         dataset = dataset.select(range(min(max_samples, len(dataset))))
 
@@ -161,6 +172,7 @@ def evaluate_piqa(
     model,
     tokenizer,
     max_samples: int | None = 200,
+    dataset_cache_dir: str | None = None,
 ) -> dict:
     """
     Uses log-likelihood scoring: pick the solution with higher per-token
@@ -168,7 +180,7 @@ def evaluate_piqa(
     """
     logger.info("Evaluating on PIQA (max_samples=%s) …", max_samples)
     device = next(model.parameters()).device
-    dataset = load_dataset("piqa", split="validation")
+    dataset = _load_dataset("ybisk/piqa", split="validation", cache_dir=dataset_cache_dir)
     if max_samples:
         dataset = dataset.select(range(min(max_samples, len(dataset))))
 
@@ -238,12 +250,19 @@ def run_all_evaluations(model, tokenizer, eval_cfg: dict) -> dict:
     max_samples = eval_cfg.get("max_samples", 200)
     max_new_tokens = eval_cfg.get("max_new_tokens", 256)
     few_shot = eval_cfg.get("few_shot", 4)
+    dataset_cache_dir = eval_cfg.get("dataset_cache_dir")
 
     results = {}
     fn_map = {
-        "gsm8k": lambda: evaluate_gsm8k(model, tokenizer, max_samples, max_new_tokens, few_shot),
-        "boolq": lambda: evaluate_boolq(model, tokenizer, max_samples),
-        "piqa": lambda: evaluate_piqa(model, tokenizer, max_samples),
+        "gsm8k": lambda: evaluate_gsm8k(
+            model, tokenizer, max_samples, max_new_tokens, few_shot, dataset_cache_dir
+        ),
+        "boolq": lambda: evaluate_boolq(
+            model, tokenizer, max_samples, dataset_cache_dir=dataset_cache_dir
+        ),
+        "piqa": lambda: evaluate_piqa(
+            model, tokenizer, max_samples, dataset_cache_dir=dataset_cache_dir
+        ),
     }
     for ds in datasets:
         if ds in fn_map:

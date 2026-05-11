@@ -105,6 +105,7 @@ def main():
             dataset=args.sens_dataset,
             max_samples=args.sens_samples,
             output_path=args.sens_output,
+            dataset_cache_dir=eval_cfg.get("dataset_cache_dir"),
         )
         return
 

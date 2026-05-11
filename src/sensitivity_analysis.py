@@ -83,6 +83,7 @@ def evaluate_with_one_layer_quantized(
     dataset: str,
     max_samples: int,
     device,
+    dataset_cache_dir: str | None = None,
 ) -> float:
     """
     Quantize decoder_layer[layer_idx], evaluate, then restore it.
@@ -101,11 +102,22 @@ def evaluate_with_one_layer_quantized(
         target_layer.to(device)
 
         if dataset == "gsm8k":
-            result = evaluate_gsm8k(model, tokenizer, max_samples=max_samples, max_new_tokens=128, few_shot=2)
+            result = evaluate_gsm8k(
+                model,
+                tokenizer,
+                max_samples=max_samples,
+                max_new_tokens=128,
+                few_shot=2,
+                dataset_cache_dir=dataset_cache_dir,
+            )
         elif dataset == "boolq":
-            result = evaluate_boolq(model, tokenizer, max_samples=max_samples)
+            result = evaluate_boolq(
+                model, tokenizer, max_samples=max_samples, dataset_cache_dir=dataset_cache_dir
+            )
         else:
-            result = evaluate_piqa(model, tokenizer, max_samples=max_samples)
+            result = evaluate_piqa(
+                model, tokenizer, max_samples=max_samples, dataset_cache_dir=dataset_cache_dir
+            )
         acc = result["accuracy"]
     finally:
         # Always restore the layer
@@ -126,6 +138,7 @@ def run_sensitivity_analysis(
     dataset: str = "boolq",
     max_samples: int = 100,
     output_path: str = "results/sensitivity.json",
+    dataset_cache_dir: str | None = None,
 ) -> dict:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = load_tokenizer(model_name, cache_dir)
@@ -141,11 +154,22 @@ def run_sensitivity_analysis(
     # ── FP16 baseline ─────────────────────────────────────────────────────────
     logger.info("Computing FP16 baseline accuracy …")
     if dataset == "gsm8k":
-        baseline_result = evaluate_gsm8k(model, tokenizer, max_samples=max_samples, max_new_tokens=128, few_shot=2)
+        baseline_result = evaluate_gsm8k(
+            model,
+            tokenizer,
+            max_samples=max_samples,
+            max_new_tokens=128,
+            few_shot=2,
+            dataset_cache_dir=dataset_cache_dir,
+        )
     elif dataset == "boolq":
-        baseline_result = evaluate_boolq(model, tokenizer, max_samples=max_samples)
+        baseline_result = evaluate_boolq(
+            model, tokenizer, max_samples=max_samples, dataset_cache_dir=dataset_cache_dir
+        )
     else:
-        baseline_result = evaluate_piqa(model, tokenizer, max_samples=max_samples)
+        baseline_result = evaluate_piqa(
+            model, tokenizer, max_samples=max_samples, dataset_cache_dir=dataset_cache_dir
+        )
     baseline_acc = baseline_result["accuracy"]
     logger.info("FP16 baseline accuracy: %.4f", baseline_acc)
 
@@ -163,6 +187,7 @@ def run_sensitivity_analysis(
             dataset=dataset,
             max_samples=max_samples,
             device=device,
+            dataset_cache_dir=dataset_cache_dir,
         )
         drop = baseline_acc - acc
         elapsed = time.time() - t0
@@ -209,6 +234,7 @@ def _parse_args():
     p.add_argument("--dataset", default="boolq", choices=["gsm8k", "boolq", "piqa"])
     p.add_argument("--max_samples", type=int, default=100)
     p.add_argument("--output", default="results/sensitivity.json")
+    p.add_argument("--dataset_cache_dir", default=None)
     return p.parse_args()
 
 
@@ -226,4 +252,5 @@ if __name__ == "__main__":
         dataset=args.dataset,
         max_samples=args.max_samples,
         output_path=args.output,
+        dataset_cache_dir=args.dataset_cache_dir,
     )
